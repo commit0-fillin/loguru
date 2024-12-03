@@ -70,7 +70,15 @@ class Handler:
     @contextmanager
     def _protected_lock(self):
         """Acquire the lock, but fail fast if its already acquired by the current thread."""
-        pass
+        if getattr(self._lock_acquired, 'value', False):
+            raise RuntimeError("Lock is already acquired by the current thread")
+        
+        with self._lock:
+            try:
+                self._lock_acquired.value = True
+                yield
+            finally:
+                self._lock_acquired.value = False
 
     def __getstate__(self):
         state = self.__dict__.copy()
