@@ -87,4 +87,6 @@ class ColoredFormat:
         self._messages_color_tokens = messages_color_tokens
 
 class Colorizer:
-    pass
+    def __init__(self):
+        self.ansi_parser = AnsiParser()
+        self.formatter = Formatter()
