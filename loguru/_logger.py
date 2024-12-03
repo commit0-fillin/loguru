@@ -722,7 +722,19 @@ class Logger:
         >>> logger.remove(i)
         >>> logger.info("No longer logging")
         """
-        pass
+        with self._core.lock:
+            if handler_id is None:
+                self._core.handlers.clear()
+                self._core.handlers_count = 0
+                self._core.min_level = float('inf')
+            elif handler_id in self._core.handlers:
+                del self._core.handlers[handler_id]
+                if not self._core.handlers:
+                    self._core.min_level = float('inf')
+                else:
+                    self._core.min_level = min(handler.levelno for handler in self._core.handlers.values())
+            else:
+                raise ValueError(f"There is no existing handler with id '{handler_id}'")
 
     def complete(self):
         """Wait for the end of enqueued messages and asynchronous tasks scheduled by handlers.
@@ -774,7 +786,9 @@ class Logger:
         >>> process.join()
         Message sent from the child
         """
-        pass
+        for handler in self._core.handlers.values():
+            if hasattr(handler, 'complete'):
+                handler.complete()
 
     def catch(self, exception=Exception, *, level='ERROR', reraise=False, onerror=None, exclude=None, default=None, message="An error has been caught in function '{record[function]}', process '{record[process].name}' ({record[process].id}), thread '{record[thread].name}' ({record[thread].id}):"):
         """Return a decorator to automatically log possibly caught error in wrapped function.
@@ -929,7 +943,8 @@ class Logger:
         >>> func()
         [18:11:54] DEBUG in 'func' - Get parent context
         """
-        pass
+        options = (exception, depth, record, lazy, colors or ansi, raw, capture, [], {})
+        return Logger(self._core, *options)
 
     def bind(__self, **kwargs):
         """Bind attributes to the ``extra`` dict of each logged message record.
