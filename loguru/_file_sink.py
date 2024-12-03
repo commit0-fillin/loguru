@@ -19,7 +19,8 @@ class FileDateFormatter:
     def __format__(self, spec):
         if not spec:
             spec = '%Y-%m-%d_%H-%M-%S_%f'
-        return self.datetime.__format__(spec)
+        formatted = self.datetime.__format__(spec)
+        return formatted.rstrip('0').rstrip('.') if '.' in formatted else formatted
 
 class Compression:
     pass
